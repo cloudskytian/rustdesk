@@ -2625,6 +2625,19 @@ impl LoginConfigHandler {
         } else {
             (my_id, self.id.clone())
         };
+        let mut avatar = get_builtin_option(keys::OPTION_AVATAR);
+        if avatar.is_empty() {
+            avatar = serde_json::from_str::<serde_json::Value>(&LocalConfig::get_option(
+                "user_info",
+            ))
+            .ok()
+            .and_then(|x| {
+                x.get("avatar")
+                    .and_then(|x| x.as_str())
+                    .map(|x| x.trim().to_owned())
+            })
+            .unwrap_or_default();
+        }
         let mut display_name = get_builtin_option(keys::OPTION_DISPLAY_NAME);
         if display_name.is_empty() {
             display_name =
@@ -2684,6 +2697,7 @@ impl LoginConfigHandler {
             })
             .into(),
             hwid,
+            avatar,
             ..Default::default()
         };
         match self.conn_type {

@@ -2026,27 +2026,78 @@ class _AccountState extends State<_Account> {
   }
 
   Widget useInfo() {
-    text(String key, String value) {
-      return Align(
-        alignment: Alignment.centerLeft,
-        child: SelectionArea(child: Text('${translate(key)}: $value'))
-            .marginSymmetric(vertical: 4),
-      );
-    }
-
     return Obx(() => Offstage(
           offstage: gFFI.userModel.userName.value.isEmpty,
-          child: Column(
-            children: [
-              if (gFFI.userModel.displayName.value.trim().isNotEmpty &&
-                  gFFI.userModel.displayName.value.trim() !=
-                      gFFI.userModel.userName.value.trim())
-                text('Display Name', gFFI.userModel.displayName.value.trim()),
-              text('Username', gFFI.userModel.userName.value),
-              // text('Group', gFFI.groupModel.groupName.value),
-            ],
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Builder(builder: (context) {
+              final avatarWidget = _buildUserAvatar();
+              return Row(
+                children: [
+                  if (avatarWidget != null) avatarWidget,
+                  if (avatarWidget != null) const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          gFFI.userModel.displayNameOrUserName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        SelectionArea(
+                          child: Text(
+                            '@${gFFI.userModel.userName.value}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context).textTheme.bodySmall?.color,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }),
           ),
         )).marginOnly(left: 18, top: 16);
+  }
+
+  Widget? _buildUserAvatar() {
+    final avatar = gFFI.userModel.avatar.value.trim();
+    if (avatar.isEmpty) return null;
+    const radius = 22.0;
+    if (avatar.startsWith('data:image/')) {
+      final comma = avatar.indexOf(',');
+      if (comma > 0) {
+        try {
+          return CircleAvatar(
+            radius: radius,
+            backgroundImage: MemoryImage(base64Decode(avatar.substring(comma + 1))),
+          );
+        } catch (_) {
+          return null;
+        }
+      }
+    } else if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundImage: NetworkImage(avatar),
+      );
+    }
+    return null;
   }
 }
 

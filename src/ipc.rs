@@ -226,6 +226,7 @@ pub enum Data {
         is_terminal: bool,
         peer_id: String,
         name: String,
+        avatar: String,
         authorized: bool,
         port_forward: String,
         keyboard: bool,

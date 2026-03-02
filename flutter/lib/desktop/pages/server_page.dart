@@ -1,6 +1,7 @@
 // original cm window in Sciter version.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -462,23 +463,7 @@ class _CmHeaderState extends State<_CmHeader>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 70,
-            height: 70,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: str2color(client.name),
-              borderRadius: BorderRadius.circular(15.0),
-            ),
-            child: Text(
-              client.name[0],
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                fontSize: 55,
-              ),
-            ),
-          ).marginOnly(right: 10.0),
+          _buildClientAvatar().marginOnly(right: 10.0),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -582,6 +567,60 @@ class _CmHeaderState extends State<_CmHeader>
 
   @override
   bool get wantKeepAlive => true;
+
+  Widget _buildClientAvatar() {
+    const borderRadius = BorderRadius.all(Radius.circular(15.0));
+    final avatar = client.avatar.trim();
+    if (avatar.startsWith('data:image/')) {
+      final comma = avatar.indexOf(',');
+      if (comma > 0) {
+        try {
+          final bytes = base64Decode(avatar.substring(comma + 1));
+          return ClipRRect(
+            borderRadius: borderRadius,
+            child: Image.memory(
+              bytes,
+              width: 70,
+              height: 70,
+              fit: BoxFit.cover,
+            ),
+          );
+        } catch (_) {}
+      }
+    } else if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+      return ClipRRect(
+        borderRadius: borderRadius,
+        child: Image.network(
+          avatar,
+          width: 70,
+          height: 70,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _buildInitialAvatar(),
+        ),
+      );
+    }
+    return _buildInitialAvatar();
+  }
+
+  Widget _buildInitialAvatar() {
+    return Container(
+      width: 70,
+      height: 70,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: str2color(client.name),
+        borderRadius: BorderRadius.circular(15.0),
+      ),
+      child: Text(
+        client.name[0],
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+          fontSize: 55,
+        ),
+      ),
+    );
+  }
 }
 
 class _PrivilegeBoard extends StatefulWidget {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -841,13 +842,7 @@ class ClientInfo extends StatelessWidget {
                   flex: -1,
                   child: Padding(
                       padding: const EdgeInsets.only(right: 12),
-                      child: CircleAvatar(
-                          backgroundColor: str2color(
-                              client.name,
-                              Theme.of(context).brightness == Brightness.light
-                                  ? 255
-                                  : 150),
-                          child: Text(client.name[0])))),
+                      child: _buildAvatar(context))),
               Expanded(
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -859,6 +854,31 @@ class ClientInfo extends StatelessWidget {
             ],
           ),
         ]));
+  }
+
+  Widget _buildAvatar(BuildContext context) {
+    final avatar = client.avatar.trim();
+    if (avatar.isNotEmpty) {
+      if (avatar.startsWith('data:image/')) {
+        final comma = avatar.indexOf(',');
+        if (comma > 0) {
+          try {
+            return CircleAvatar(
+              backgroundImage: MemoryImage(base64Decode(avatar.substring(comma + 1))),
+            );
+          } catch (_) {}
+        }
+      } else if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+        return CircleAvatar(backgroundImage: NetworkImage(avatar));
+      }
+    }
+    // Show character as before if no avatar
+    return CircleAvatar(
+      backgroundColor: str2color(
+          client.name,
+          Theme.of(context).brightness == Brightness.light ? 255 : 150),
+      child: Text(client.name[0]),
+    );
   }
 }
 

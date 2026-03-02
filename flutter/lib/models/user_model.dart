@@ -17,6 +17,7 @@ bool refreshingUser = false;
 class UserModel {
   final RxString userName = ''.obs;
   final RxString displayName = ''.obs;
+  final RxString avatar = ''.obs;
   final RxBool isAdmin = false.obs;
   final RxString networkError = ''.obs;
   bool get isLogin => userName.isNotEmpty;
@@ -87,6 +88,7 @@ class UserModel {
       }
 
       final user = UserPayload.fromJson(data);
+      user.avatar = _resolveAvatar(user.avatar, url);
       _parseAndUpdateUser(user);
     } catch (e) {
       debugPrint('Failed to refreshCurrentUser: $e');
@@ -114,6 +116,7 @@ class UserModel {
     if (userInfo != null) {
       userName.value = (userInfo['name'] ?? '').toString();
       displayName.value = (userInfo['display_name'] ?? '').toString();
+      avatar.value = (userInfo['avatar'] ?? '').toString();
     }
   }
 
@@ -126,13 +129,16 @@ class UserModel {
     }
     userName.value = '';
     displayName.value = '';
+    avatar.value = '';
   }
 
   _parseAndUpdateUser(UserPayload user) {
     userName.value = user.name;
     displayName.value = user.displayName;
+    avatar.value = user.avatar;
     isAdmin.value = user.isAdmin;
     bind.mainSetLocalOption(key: 'user_info', value: jsonEncode(user));
+    _updateLocalUserInfo();
     if (isWeb) {
       // ugly here, tmp solution
       bind.mainSetLocalOption(key: 'verifier', value: user.verifier ?? '');

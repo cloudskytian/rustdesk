@@ -245,7 +245,39 @@ pub fn get_builtin_option(key: &str) -> String {
 
 #[inline]
 pub fn set_local_option(key: String, value: String) {
-    LocalConfig::set_option(key.clone(), value.clone());
+    let value = normalize_local_option_value(&key, value);
+    LocalConfig::set_option(key.clone(), value);
+}
+
+fn normalize_local_option_value(key: &str, value: String) -> String {
+    if key != "user_info" || value.is_empty() {
+        return value;
+    }
+    let Ok(mut v) = serde_json::from_str::<serde_json::Value>(&value) else {
+        return value;
+    };
+    let Some(obj) = v.as_object_mut() else {
+        return value;
+    };
+    let Some(avatar) = obj
+        .get("avatar")
+        .and_then(|x| x.as_str())
+        .map(|x| x.trim().to_owned())
+    else {
+        return value;
+    };
+    if !avatar.starts_with('/') {
+        return value;
+    }
+    let api_server = get_api_server();
+    if api_server.is_empty() {
+        return value;
+    }
+    obj.insert(
+        "avatar".to_owned(),
+        serde_json::Value::String(format!("{}{}", api_server.trim_end_matches('/'), avatar)),
+    );
+    serde_json::to_string(&v).unwrap_or(value)
 }
 
 #[cfg(any(target_os = "android", target_os = "ios", feature = "flutter"))]
